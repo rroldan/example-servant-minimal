@@ -12,8 +12,12 @@ import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Servant
 import           System.IO
+import           System.ReadEnvVar (lookupEnvDef, readEnvVarDef)
 
 -- * api
+data Config = Config
+  { configPort :: !Port            -- ^ 'Port' to listen on.
+  }
 
 type ItemApi =
   "item" :> Get '[JSON] [Item] :<|>
@@ -24,9 +28,16 @@ itemApi = Proxy
 
 -- * app
 
+createConfigFromEnvVars :: IO Config
+createConfigFromEnvVars = do
+  port <- readEnvVarDef "PORT" 8080
+  pure Config {configPort = port}
+
 run :: IO ()
 run = do
-  let port = 3000
+  config <- createConfigFromEnvVars
+  let port = configPort config
+-- "def val"
       settings =
         setPort port $
         setBeforeMainLoop (hPutStrLn stderr ("listening on port " ++ show port)) $
